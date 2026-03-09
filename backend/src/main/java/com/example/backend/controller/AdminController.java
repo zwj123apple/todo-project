@@ -43,7 +43,7 @@ public class AdminController {
             @RequestParam String role
     ) {
         UserDTO updatedUser = userService.updateUserRole(userId, User.UserRole.valueOf(role));
-        return ResponseEntity.ok(ApiResponse.success(updatedUser, "用户角色已更新"));
+        return ResponseEntity.ok(ApiResponse.success("用户角色已更新", updatedUser));
     }
 
     @Operation(summary = "更新用户状态", description = "管理员修改用户状态(激活/停用/暂停)")
@@ -54,7 +54,7 @@ public class AdminController {
             @RequestParam String status
     ) {
         UserDTO updatedUser = userService.updateUserStatus(userId, User.UserStatus.valueOf(status));
-        return ResponseEntity.ok(ApiResponse.success(updatedUser, "用户状态已更新"));
+        return ResponseEntity.ok(ApiResponse.success("用户状态已更新", updatedUser));
     }
 
     @Operation(summary = "删除用户", description = "管理员删除用户")
@@ -62,7 +62,7 @@ public class AdminController {
     @DeleteMapping("/users/{userId}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long userId) {
         userService.deleteUser(userId);
-        return ResponseEntity.ok(ApiResponse.success(null, "用户已删除"));
+        return ResponseEntity.ok(ApiResponse.success("用户已删除", null));
     }
 
     @Operation(summary = "获取系统统计信息", description = "管理员查看系统整体统计")

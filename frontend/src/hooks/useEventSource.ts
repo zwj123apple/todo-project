@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useAuthStore } from "../stores/authStore";
+import { authService } from "../services/authService";
 
 export interface SSEMessage<T = any> {
   type: string;
@@ -37,6 +38,8 @@ export function useEventSource(
   const reconnectAttemptsRef = useRef(0);
   const reconnectTimeoutRef = useRef<number>(0);
   const accessToken = useAuthStore((state) => state.accessToken);
+  const refreshToken = useAuthStore((state) => state.refreshToken);
+  const setAuth = useAuthStore((state) => state.setAuth);
 
   // 使用 ref 存储回调函数，避免依赖变化导致重新连接
   const onMessageRef = useRef(onMessage);
@@ -48,6 +51,40 @@ export function useEventSource(
     onErrorRef.current = onError;
     onOpenRef.current = onOpen;
   }, [onMessage, onError, onOpen]);
+
+  // 检查token是否即将过期（5分钟内）
+  const isTokenExpiringSoon = useCallback((token: string): boolean => {
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const exp = payload.exp * 1000; // 转换为毫秒
+      const now = Date.now();
+      const fiveMinutes = 5 * 60 * 1000;
+      return exp - now < fiveMinutes;
+    } catch (error) {
+      console.error("解析token失败:", error);
+      return true; // 解析失败时认为已过期
+    }
+  }, []);
+
+  // 确保token有效（如果即将过期则刷新）
+  const ensureValidToken = useCallback(async (): Promise<string | null> => {
+    if (!accessToken || !refreshToken) {
+      return null;
+    }
+
+    if (isTokenExpiringSoon(accessToken)) {
+      console.log("Token即将过期，正在刷新...");
+      try {
+        const response = await authService.refreshToken(refreshToken);
+        setAuth(response.user, response.accessToken, response.refreshToken);
+        return response.accessToken;
+      } catch (error) {
+        console.error("刷新token失败:", error);
+        return null;
+      }
+    }
+    return accessToken;
+  }, [accessToken, refreshToken, isTokenExpiringSoon, setAuth]);
 
   // 手动重连函数
   const manualReconnect = useCallback(() => {
@@ -87,10 +124,27 @@ export function useEventSource(
     let mounted = true;
     let localReconnectTimeout: number | null = null;
 
-    const createConnection = () => {
-      if (!mounted || !accessToken) {
+    const createConnection = async () => {
+      if (!mounted) {
         return;
       }
+
+      // 确保token有效
+      const validToken = await ensureValidToken();
+      if (!validToken) {
+        console.error("无法获取有效的token，SSE连接中止");
+        setError(new Event("auth_error") as Event);
+        return;
+      }
+
+      // 如果token已更新，等待React重新渲染以使用新token
+      if (validToken !== accessToken) {
+        console.log("Token已更新，等待重新渲染...");
+        return;
+      }
+
+      // 清除之前的重连次数（成功创建连接前的准备工作）
+      reconnectAttemptsRef.current = 0;
 
       try {
         // EventSource 不支持自定义headers，所以我们通过URL参数传递token
@@ -120,7 +174,37 @@ export function useEventSource(
         };
 
         eventSource.onerror = (event) => {
-          console.error("SSE连接错误:", event);
+          console.error(
+            "SSE连接错误:",
+            event,
+            "readyState:",
+            eventSource.readyState,
+          );
+
+          // 检测是否是401错误（通过readyState判断）
+          const isUnauthorized = eventSource.readyState === EventSource.CLOSED;
+
+          // 如果是第一次重连且可能是401错误，尝试刷新token
+          if (
+            isUnauthorized &&
+            reconnectAttemptsRef.current === 0 &&
+            refreshToken
+          ) {
+            console.log("检测到可能的401错误，尝试刷新token...");
+            authService
+              .refreshToken(refreshToken)
+              .then((response) => {
+                setAuth(
+                  response.user,
+                  response.accessToken,
+                  response.refreshToken,
+                );
+                console.log("Token刷新成功，将在下次useEffect中重新连接");
+              })
+              .catch((err) => {
+                console.error("刷新token失败:", err);
+              });
+          }
 
           if (mounted) {
             setIsConnected(false);
@@ -216,7 +300,16 @@ export function useEventSource(
         eventSourceRef.current = null;
       }
     };
-  }, [url, accessToken, reconnect, reconnectInterval, maxReconnectAttempts]);
+  }, [
+    url,
+    accessToken,
+    refreshToken,
+    reconnect,
+    reconnectInterval,
+    maxReconnectAttempts,
+    ensureValidToken,
+    setAuth,
+  ]);
 
   return {
     isConnected,

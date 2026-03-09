@@ -2,12 +2,8 @@ import { useEffect } from "react";
 import { useNotifications } from "../hooks/useEventSource";
 
 export function NotificationToast() {
-  const {
-    notifications,
-    isConnected,
-    removeNotification,
-    requestNotificationPermission,
-  } = useNotifications();
+  const { notifications, removeNotification, requestNotificationPermission } =
+    useNotifications();
 
   useEffect(() => {
     // 请求浏览器通知权限
@@ -29,20 +25,6 @@ export function NotificationToast() {
 
   return (
     <div className="fixed top-4 right-4 z-50 space-y-2">
-      {/* 连接状态指示器 */}
-      <div
-        className={`px-3 py-1 rounded-full text-xs flex items-center gap-2 ${
-          isConnected
-            ? "bg-green-100 text-green-700"
-            : "bg-gray-100 text-gray-700"
-        }`}
-      >
-        <span
-          className={`w-2 h-2 rounded-full ${isConnected ? "bg-green-500" : "bg-gray-400"}`}
-        />
-        {isConnected ? "实时连接" : "离线"}
-      </div>
-
       {/* 通知列表 */}
       {notifications.map((notification, index) => (
         <div
