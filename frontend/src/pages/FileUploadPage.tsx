@@ -4,11 +4,12 @@ import {
   Upload,
   Button,
   Progress,
-  List,
   Space,
   Typography,
   message,
   Alert,
+  Flex,
+  Divider,
 } from "antd";
 import type { UploadProps, UploadFile as AntdUploadFile } from "antd";
 import {
@@ -175,9 +176,9 @@ export default function FileUploadPage() {
       <Title level={2}>文件上传</Title>
 
       <Card>
-        <Space direction="vertical" size="large" style={{ width: "100%" }}>
+        <Space orientation="vertical" size="large" style={{ width: "100%" }}>
           <Alert
-            message="支持大文件分片上传"
+            title="支持大文件分片上传"
             description="文件会被自动分片上传，支持断点续传，实时显示上传进度。"
             type="info"
             showIcon
@@ -191,41 +192,25 @@ export default function FileUploadPage() {
 
           {uploadingFiles.size > 0 && (
             <Card title="上传列表" type="inner">
-              <List
-                dataSource={Array.from(uploadingFiles.entries())}
-                renderItem={([fileId, fileInfo]) => (
-                  <List.Item
-                    key={fileId}
-                    actions={[
-                      fileInfo.status === "success" && (
-                        <CheckCircleOutlined
-                          key="success"
-                          style={{ color: "#52c41a", fontSize: 20 }}
-                        />
-                      ),
-                      fileInfo.status === "error" && (
-                        <CloseCircleOutlined
-                          key="error"
-                          style={{ color: "#ff4d4f", fontSize: 20 }}
-                        />
-                      ),
-                      <Button
-                        key="remove"
-                        size="small"
-                        danger={fileInfo.status === "uploading"}
-                        onClick={() => handleRemove(fileId)}
-                      >
-                        {fileInfo.status === "uploading" ? "取消" : "移除"}
-                      </Button>,
-                    ].filter((item): item is React.ReactElement =>
-                      Boolean(item),
-                    )}
-                  >
-                    <List.Item.Meta
-                      avatar={<FileOutlined style={{ fontSize: 24 }} />}
-                      title={fileInfo.file.name}
-                      description={
-                        <Space direction="vertical" style={{ width: "100%" }}>
+              <Space
+                direction="vertical"
+                size="middle"
+                style={{ width: "100%" }}
+              >
+                {Array.from(uploadingFiles.entries()).map(
+                  ([fileId, fileInfo], index) => (
+                    <div key={fileId}>
+                      {index > 0 && <Divider style={{ margin: "12px 0" }} />}
+                      <Flex gap="middle" align="start">
+                        <FileOutlined style={{ fontSize: 24, marginTop: 4 }} />
+                        <Flex
+                          vertical
+                          gap="small"
+                          style={{ flex: 1, minWidth: 0 }}
+                        >
+                          <Text strong style={{ fontSize: 16 }}>
+                            {fileInfo.file.name}
+                          </Text>
                           <Text type="secondary">
                             大小:{" "}
                             {(fileInfo.file.size / 1024 / 1024).toFixed(2)} MB
@@ -264,19 +249,38 @@ export default function FileUploadPage() {
                               <Text type="danger">{fileInfo.error}</Text>
                             </>
                           )}
-                        </Space>
-                      }
-                    />
-                  </List.Item>
+                        </Flex>
+                        <Flex gap="small" align="center">
+                          {fileInfo.status === "success" && (
+                            <CheckCircleOutlined
+                              style={{ color: "#52c41a", fontSize: 20 }}
+                            />
+                          )}
+                          {fileInfo.status === "error" && (
+                            <CloseCircleOutlined
+                              style={{ color: "#ff4d4f", fontSize: 20 }}
+                            />
+                          )}
+                          <Button
+                            size="small"
+                            danger={fileInfo.status === "uploading"}
+                            onClick={() => handleRemove(fileId)}
+                          >
+                            {fileInfo.status === "uploading" ? "取消" : "移除"}
+                          </Button>
+                        </Flex>
+                      </Flex>
+                    </div>
+                  ),
                 )}
-              />
+              </Space>
             </Card>
           )}
         </Space>
       </Card>
 
       <Card title="使用说明">
-        <Space direction="vertical" size="small">
+        <Space orientation="vertical" size="small">
           <Text>• 支持多文件同时上传</Text>
           <Text>• 大文件自动分片上传（默认分片大小 2MB）</Text>
           <Text>• 实时显示上传进度</Text>

@@ -122,7 +122,7 @@ export default function FileListPage() {
       key: "status",
       width: 100,
       render: (status: string, record: FileMetadata) => (
-        <Space direction="vertical" size="small">
+        <Space orientation="vertical" size="small">
           {getStatusTag(status)}
           {status === "UPLOADING" && (
             <Text type="secondary" style={{ fontSize: 12 }}>

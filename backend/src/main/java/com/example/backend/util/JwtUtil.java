@@ -50,16 +50,18 @@ public class JwtUtil {
         return extractExpiration(token).before(new Date());
     }
     
-    public String generateAccessToken(String username, Long userId) {
+    public String generateAccessToken(String username, Long userId, String role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
+        claims.put("role", role);
         claims.put("type", "access");
         return createToken(claims, username, jwtProperties.getAccessTokenExpiration());
     }
     
-    public String generateRefreshToken(String username, Long userId) {
+    public String generateRefreshToken(String username, Long userId, String role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
+        claims.put("role", role);
         claims.put("type", "refresh");
         return createToken(claims, username, jwtProperties.getRefreshTokenExpiration());
     }
@@ -85,5 +87,10 @@ public class JwtUtil {
     public Long extractUserId(String token) {
         Claims claims = extractAllClaims(token);
         return claims.get("userId", Long.class);
+    }
+    
+    public String extractRole(String token) {
+        Claims claims = extractAllClaims(token);
+        return claims.get("role", String.class);
     }
 }

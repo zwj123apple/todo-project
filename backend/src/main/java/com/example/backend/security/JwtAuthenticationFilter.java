@@ -28,6 +28,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        // 🎯 SSE请求跳过此Filter，由SseAuthenticationFilter处理
+        if (request.getRequestURI().contains("/api/notifications/stream")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         final String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
@@ -36,10 +42,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String jwt = authHeader.substring(7);
         
-        // ✅ 直接抛异常，不在这里写 response
+        // 直接抛异常，不在这里写 response
         final String username = jwtUtil.extractUsername(jwt); // 过期会自动抛 ExpiredJwtException
         
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            // ✅ 普通API请求：查询数据库获取最新用户状态（安全性）
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
             
             if (jwtUtil.validateToken(jwt, userDetails.getUsername())) {
