@@ -76,7 +76,7 @@ export const useUpdateTask = () => {
       return { previousTask };
     },
     // 如果mutation失败，使用context中的值回滚
-    onError: (err, variables, context) => {
+    onError: (_err, variables, context) => {
       if (context?.previousTask) {
         queryClient.setQueryData(
           [QUERY_KEYS.TASK, variables.id],
