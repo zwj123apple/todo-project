@@ -1,0 +1,51 @@
+# Kafka配置文件
+# 面试要点：了解各个配置项的作用
+
+spring:
+  kafka:
+    # Kafka服务器地址
+    bootstrap-servers: localhost:9093
+
+    # 生产者配置
+    producer:
+      # Key序列化器
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      # Value序列化器
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      # acks配置：all表示所有副本都确认
+      acks: all
+      # 重试次数
+      retries: 3
+      # 批量大小
+      batch-size: 16384
+      # 延迟时间（毫秒）
+      linger-ms: 1
+      # 缓冲区大小
+      buffer-memory: 33554432
+
+    # 消费者配置
+    consumer:
+      # Key反序列化器
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      # Value反序列化器
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      # 消费者组ID
+      group-id: todo-consumer-group
+      # 自动提交偏移量
+      enable-auto-commit: true
+      # 自动提交间隔
+      auto-commit-interval: 1000
+      # 偏移量重置策略：earliest从头开始，latest从最新开始
+      auto-offset-reset: earliest
+      # 单次poll最大记录数
+      max-poll-records: 500
+      # 信任的包（用于JSON反序列化）
+      properties:
+        spring.json.trusted.packages: "*"
+
+    # Listener配置
+    listener:
+      # 并发数（消费者线程数）
+      concurrency: 3
+      # Ack模式：manual_immediate手动立即确认，batch批量确认
+      ack-mode: batch

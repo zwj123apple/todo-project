@@ -19,7 +19,7 @@ public class UserController {
     private final UserService userService;
     private final UserRepository userRepository;
     
-    private User getCurrentUser(Authentication authentication) {
+    private User getAuthenticatedUser(Authentication authentication) {
         String username = authentication.getName();
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UnauthorizedException("用户不存在"));
@@ -27,7 +27,7 @@ public class UserController {
     
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserDTO>> getCurrentUser(Authentication authentication) {
-        User user = getCurrentUser(authentication);
+        User user = getAuthenticatedUser(authentication);
         UserDTO userDTO = userService.getCurrentUser(user.getId());
         return ResponseEntity.ok(ApiResponse.success(userDTO));
     }
@@ -36,7 +36,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserDTO>> updateProfile(
             Authentication authentication,
             @RequestBody UserDTO userDTO) {
-        User user = getCurrentUser(authentication);
+        User user = getAuthenticatedUser(authentication);
         UserDTO updatedUser = userService.updateProfile(user.getId(), userDTO);
         return ResponseEntity.ok(ApiResponse.success("个人资料更新成功", updatedUser));
     }

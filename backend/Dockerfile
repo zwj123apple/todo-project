@@ -1,6 +1,10 @@
 # 使用Maven构建
 FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
+
+# 复制Maven配置文件（使用阿里云镜像）
+COPY settings.xml /root/.m2/settings.xml
+
 COPY pom.xml .
 COPY src ./src
 RUN mvn clean package -DskipTests
