@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.backend.dto.ApiResponse;
 import com.example.backend.dto.FileMetadataDTO;
 import com.example.backend.dto.FileUploadInitRequest;
 import com.example.backend.dto.FileUploadResponse;
@@ -52,7 +53,7 @@ public class FileUploadController {
     
     @Operation(summary = "获取文件列表")
     @GetMapping
-    public ResponseEntity<org.springframework.data.domain.Page<FileMetadataDTO>> getFileList(
+    public ResponseEntity<ApiResponse<Page<FileMetadataDTO>>> getFileList(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             Authentication authentication) {
@@ -61,30 +62,32 @@ public class FileUploadController {
         Page<FileMetadata> filePage = fileUploadService.getFileList(user.getId(), page, size);
         Page<FileMetadataDTO> dtoPage = filePage.map(this::convertToDTO);
         
-        return ResponseEntity.ok(dtoPage);
+        return ResponseEntity.ok(ApiResponse.success(dtoPage));
     }
     
     @Operation(summary = "初始化上传")
     @PostMapping("/init")
-    public ResponseEntity<FileUploadResponse> initUpload(@Valid @RequestBody FileUploadInitRequest request,
-                                                          Authentication authentication) {
+    public ResponseEntity<ApiResponse<FileUploadResponse>> initUpload(
+            @Valid @RequestBody FileUploadInitRequest request,
+            Authentication authentication) {
     	User user = getCurrentUser(authentication);
         
-        FileUploadResponse response = fileUploadService.initUpload(user.getId(),request);
-        return ResponseEntity.ok(response);
+        FileUploadResponse response = fileUploadService.initUpload(user.getId(), request);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @Operation(summary = "上传分片")
     @PostMapping("/chunk")
-    public ResponseEntity<FileUploadResponse> uploadChunk(
+    public ResponseEntity<ApiResponse<FileUploadResponse>> uploadChunk(
             @RequestParam String fileIdentifier,
             @RequestParam Integer chunkNumber,
             @RequestParam Integer totalChunks,
             @RequestParam MultipartFile chunk,
             Authentication auth) {
         User user = getCurrentUser(auth);
-        return ResponseEntity.ok(fileUploadService.uploadChunk(
-                user.getId(), fileIdentifier, chunkNumber, totalChunks, chunk));
+        FileUploadResponse response = fileUploadService.uploadChunk(
+                user.getId(), fileIdentifier, chunkNumber, totalChunks, chunk);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @Operation(summary = "下载文件")
@@ -106,12 +109,12 @@ public class FileUploadController {
     
     @Operation(summary = "删除文件")
     @DeleteMapping("/{fileId}")
-    public ResponseEntity<Void> deleteFile(
+    public ResponseEntity<ApiResponse<Void>> deleteFile(
             @PathVariable Long fileId,
             Authentication auth) {
         User user = getCurrentUser(auth);
         fileUploadService.deleteFile(user.getId(), fileId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(ApiResponse.success("文件删除成功", null));
     }
     
     private FileMetadataDTO convertToDTO(FileMetadata metadata) {

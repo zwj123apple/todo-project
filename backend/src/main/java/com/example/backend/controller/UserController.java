@@ -2,10 +2,13 @@ package com.example.backend.controller;
 
 import com.example.backend.dto.ApiResponse;
 import com.example.backend.dto.UserDTO;
+import com.example.backend.entity.User;
+import com.example.backend.exception.UnauthorizedException;
+import com.example.backend.repository.UserRepository;
 import com.example.backend.service.UserService;
-import com.example.backend.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -14,27 +17,27 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     
     private final UserService userService;
-    private final JwtUtil jwtUtil;
+    private final UserRepository userRepository;
     
-    private Long getUserIdFromToken(String token) {
-        String jwt = token.substring(7);
-        return jwtUtil.extractUserId(jwt);
+    private User getCurrentUser(Authentication authentication) {
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UnauthorizedException("用户不存在"));
     }
     
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<UserDTO>> getCurrentUser(
-            @RequestHeader("Authorization") String token) {
-        Long userId = getUserIdFromToken(token);
-        UserDTO user = userService.getCurrentUser(userId);
-        return ResponseEntity.ok(ApiResponse.success(user));
+    public ResponseEntity<ApiResponse<UserDTO>> getCurrentUser(Authentication authentication) {
+        User user = getCurrentUser(authentication);
+        UserDTO userDTO = userService.getCurrentUser(user.getId());
+        return ResponseEntity.ok(ApiResponse.success(userDTO));
     }
     
     @PutMapping("/me")
     public ResponseEntity<ApiResponse<UserDTO>> updateProfile(
-            @RequestHeader("Authorization") String token,
+            Authentication authentication,
             @RequestBody UserDTO userDTO) {
-        Long userId = getUserIdFromToken(token);
-        UserDTO user = userService.updateProfile(userId, userDTO);
-        return ResponseEntity.ok(ApiResponse.success("个人资料更新成功", user));
+        User user = getCurrentUser(authentication);
+        UserDTO updatedUser = userService.updateProfile(user.getId(), userDTO);
+        return ResponseEntity.ok(ApiResponse.success("个人资料更新成功", updatedUser));
     }
 }

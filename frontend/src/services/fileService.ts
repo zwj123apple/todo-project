@@ -1,5 +1,6 @@
 import axios from "../lib/axios";
 import SparkMD5 from "spark-md5";
+import type { ApiResponse } from "../types";
 
 export interface FileUploadInit {
   filename: string;
@@ -59,8 +60,11 @@ export const calculateFileMD5 = (file: File): Promise<string> => {
 export const initFileUpload = async (
   data: FileUploadInit,
 ): Promise<FileUploadResponse> => {
-  const response = await axios.post<FileUploadResponse>("/files/init", data);
-  return response.data;
+  const response = await axios.post<ApiResponse<FileUploadResponse>>(
+    "/files/init",
+    data,
+  );
+  return response.data.data;
 };
 
 // 上传单个分片
@@ -77,7 +81,7 @@ export const uploadChunk = async (
   formData.append("totalChunks", totalChunks.toString());
   formData.append("chunk", chunk);
 
-  const response = await axios.post<FileUploadResponse>(
+  const response = await axios.post<ApiResponse<FileUploadResponse>>(
     "/files/chunk",
     formData,
     {
@@ -93,7 +97,7 @@ export const uploadChunk = async (
     },
   );
 
-  return response.data;
+  return response.data.data;
 };
 
 // 文件元数据接口
@@ -125,10 +129,13 @@ export const getFileList = async (
   page: number = 0,
   size: number = 20,
 ): Promise<PageResponse<FileMetadata>> => {
-  const response = await axios.get<PageResponse<FileMetadata>>("/files", {
-    params: { page, size },
-  });
-  return response.data;
+  const response = await axios.get<ApiResponse<PageResponse<FileMetadata>>>(
+    "/files",
+    {
+      params: { page, size },
+    },
+  );
+  return response.data.data;
 };
 
 // 下载文件
