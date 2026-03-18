@@ -2,10 +2,12 @@ package com.example.backend.service;
 
 import com.example.backend.dto.*;
 import com.example.backend.entity.RefreshToken;
+import com.example.backend.entity.Tag;
 import com.example.backend.entity.User;
 import com.example.backend.exception.BadRequestException;
 import com.example.backend.exception.UnauthorizedException;
 import com.example.backend.repository.RefreshTokenRepository;
+import com.example.backend.repository.TagRepository;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +27,7 @@ public class AuthService {
     
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final TagRepository tagRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
@@ -47,12 +52,32 @@ public class AuthService {
         
         user = userRepository.save(user);
         
+        // 为新用户创建默认标签
+        createDefaultTagsForUser(user);
+        
         String accessToken = jwtUtil.generateAccessToken(user.getUsername(), user.getId(), user.getRole().name());
         String refreshTokenStr = jwtUtil.generateRefreshToken(user.getUsername(), user.getId(), user.getRole().name());
         
         saveRefreshToken(user, refreshTokenStr);
         
         return new AuthResponse(accessToken, refreshTokenStr, UserDTO.fromEntity(user));
+    }
+    
+    /**
+     * 为新用户创建默认标签
+     */
+    private void createDefaultTagsForUser(User user) {
+        List<String> defaultTagNames = Arrays.asList("工作", "个人", "学习", "紧急", "重要");
+        List<String> defaultTagColors = Arrays.asList("#EF4444", "#3B82F6", "#10B981", "#F59E0B", "#8B5CF6");
+        
+        for (int i = 0; i < defaultTagNames.size(); i++) {
+            Tag tag = new Tag();
+            tag.setName(defaultTagNames.get(i));
+            tag.setColor(defaultTagColors.get(i));
+            tag.setUser(user);
+            tag.setCreatedAt(LocalDateTime.now());
+            tagRepository.save(tag);
+        }
     }
     
     @Transactional

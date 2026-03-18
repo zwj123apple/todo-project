@@ -102,7 +102,28 @@ VALUES (
     'ACTIVE'
 ) ON DUPLICATE KEY UPDATE username=username;
 
--- 为测试用户插入一些示例标签
+-- 为管理员用户插入默认标签
+INSERT INTO tags (name, color, user_id) 
+SELECT '工作', '#EF4444', id FROM users WHERE username = 'admin'
+ON DUPLICATE KEY UPDATE name=name;
+
+INSERT INTO tags (name, color, user_id) 
+SELECT '个人', '#3B82F6', id FROM users WHERE username = 'admin'
+ON DUPLICATE KEY UPDATE name=name;
+
+INSERT INTO tags (name, color, user_id) 
+SELECT '学习', '#10B981', id FROM users WHERE username = 'admin'
+ON DUPLICATE KEY UPDATE name=name;
+
+INSERT INTO tags (name, color, user_id) 
+SELECT '紧急', '#F59E0B', id FROM users WHERE username = 'admin'
+ON DUPLICATE KEY UPDATE name=name;
+
+INSERT INTO tags (name, color, user_id) 
+SELECT '重要', '#8B5CF6', id FROM users WHERE username = 'admin'
+ON DUPLICATE KEY UPDATE name=name;
+
+-- 为测试用户插入默认标签
 INSERT INTO tags (name, color, user_id) 
 SELECT '工作', '#EF4444', id FROM users WHERE username = 'testuser'
 ON DUPLICATE KEY UPDATE name=name;
@@ -117,6 +138,10 @@ ON DUPLICATE KEY UPDATE name=name;
 
 INSERT INTO tags (name, color, user_id) 
 SELECT '紧急', '#F59E0B', id FROM users WHERE username = 'testuser'
+ON DUPLICATE KEY UPDATE name=name;
+
+INSERT INTO tags (name, color, user_id) 
+SELECT '重要', '#8B5CF6', id FROM users WHERE username = 'testuser'
 ON DUPLICATE KEY UPDATE name=name;
 
 -- 为测试用户插入一些示例任务
