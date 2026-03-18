@@ -18,6 +18,7 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
 } from "@ant-design/icons";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   calculateFileMD5,
   initFileUpload,
@@ -40,6 +41,8 @@ export default function FileUploadPage() {
   const [uploadingFiles, setUploadingFiles] = useState<
     Map<string, UploadingFile>
   >(new Map());
+
+  const queryClient = useQueryClient();
 
   const handleUpload = async (file: File) => {
     const fileId = `${file.name}-${Date.now()}`;
@@ -81,6 +84,8 @@ export default function FileUploadPage() {
           return newMap;
         });
         message.success(`${file.name} 上传成功！`);
+        // 刷新文件列表缓存
+        queryClient.invalidateQueries({ queryKey: ["files"] });
         return;
       }
 
@@ -129,6 +134,9 @@ export default function FileUploadPage() {
       });
 
       message.success(`${file.name} 上传成功！`);
+
+      // 刷新文件列表缓存
+      queryClient.invalidateQueries({ queryKey: ["files"] });
     } catch (error) {
       // 上传失败
       setUploadingFiles((prev) => {
@@ -179,7 +187,7 @@ export default function FileUploadPage() {
         <Space orientation="vertical" size="large" style={{ width: "100%" }}>
           <Alert
             title="支持大文件分片上传"
-            description="文件会被自动分片上传，支持断点续传，实时显示上传进度。"
+            description="文件会被自动分片上传，支持断点续传，实时显示上传进度。上传成功后可在文件列表查看。"
             type="info"
             showIcon
           />
@@ -237,7 +245,9 @@ export default function FileUploadPage() {
                                 status="success"
                                 strokeColor="#52c41a"
                               />
-                              <Text type="success">上传成功</Text>
+                              <Text type="success">
+                                ✓ 上传成功！可前往文件列表查看
+                              </Text>
                             </>
                           )}
                           {fileInfo.status === "error" && (
@@ -286,6 +296,7 @@ export default function FileUploadPage() {
           <Text>• 实时显示上传进度</Text>
           <Text>• 支持断点续传（刷新页面后可继续上传）</Text>
           <Text>• 上传成功后文件信息会保存到数据库</Text>
+          <Text>• 上传完成后前往"文件列表"页面查看已上传的文件</Text>
         </Space>
       </Card>
     </div>

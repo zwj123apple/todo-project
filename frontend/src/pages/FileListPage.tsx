@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   Table,
@@ -37,6 +37,12 @@ export default function FileListPage() {
     queryKey: ["files", page, pageSize],
     queryFn: () => getFileList(page, pageSize),
   });
+
+  // 组件挂载时自动刷新数据
+  useEffect(() => {
+    refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 删除文件
   const deleteMutation = useMutation({
@@ -122,7 +128,7 @@ export default function FileListPage() {
       key: "status",
       width: 100,
       render: (status: string, record: FileMetadata) => (
-        <Space orientation="vertical" size="small">
+        <Space direction="vertical" size="small">
           {getStatusTag(status)}
           {status === "UPLOADING" && (
             <Text type="secondary" style={{ fontSize: 12 }}>
